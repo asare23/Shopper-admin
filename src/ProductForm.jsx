@@ -38,8 +38,14 @@ export default function ProductForm({
         const up = await supabase.storage
           .from(BUCKET)
           .upload(path, file, { contentType: file.type });
-        if (up.error)
+        if (up.error) {
+          if (up.error.message.includes("row-level security policy")) {
+            throw new Error(
+              "Image upload is blocked by Supabase Storage RLS. Add a policy for the 'products' bucket to allow authenticated uploads.",
+            );
+          }
           throw new Error("Image upload failed: " + up.error.message);
+        }
         image = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
       }
       if (!image) throw new Error("Add an image file or link.");
